@@ -131,6 +131,8 @@ class VocImageDataGenerator(object):
         self.channel_shift_range = channel_shift_range
         self.rotation_range = rotation_range
         self.preprocessing_function = preprocessing_function
+        self.samplewise_center = samplewise_center
+        self.samplewise_std_normalization =samplewise_std_normalization
         self.cval = cval
         if np.isscalar(zoom_range):
             self.zoom_range = [1 - zoom_range, 1 + zoom_range]
