@@ -387,6 +387,7 @@ class VocImageIterator(Iterator):
             y = to_categorical(y, self.classes + 1)
             if x.ndim > 3:
                 print ("ndmi:{}, j={}", x.ndim, j)
+            print (x.shape)
             batch_x[i] = x
             batch_y[i] = y
                 
