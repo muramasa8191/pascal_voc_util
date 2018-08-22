@@ -124,6 +124,8 @@ class VocImageDataGenerator(object):
         self.pad_size = pad_size
         self.fill_mode = fill_mode
         self.label_cval = label_cval
+        self.horizontal_flip=horizontal_flip,
+        self.vertical_flip=vertical_flip,
         self.featurewise_center = featurewise_center
         self.featurewise_std_normalization = featurewise_std_normalization
         self.channel_shift_range = channel_shift_range
