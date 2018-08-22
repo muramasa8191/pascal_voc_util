@@ -67,7 +67,8 @@ class VocImageDataGenerator(object):
                  rescale=None,
                  preprocessing_function=None,
                  data_format=None,
-                 validation_split=0.0):
+                 validation_split=0.0,
+                 label_cval=255):
         self.image_shape = image_shape
         self.rescale = rescale
         if crop_mode not in {'none', 'random', 'center'}:
@@ -104,6 +105,7 @@ class VocImageDataGenerator(object):
             pad_size=self.pad_size,
            classes=classes, class_mode=class_mode,
             data_format=self.data_format,
+            label_cval = self.label_cval,
             batch_size=batch_size, shuffle=shuffle, seed=seed)
 
     def standardize(self, x):
