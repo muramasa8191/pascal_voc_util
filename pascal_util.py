@@ -377,16 +377,14 @@ class VocImageIterator(Iterator):
             x = self.image_data_generator.standardize(x)
             
             if self.ignore_label:
-                y[np.where(y == self.ignore_label)] = self.classes
+                y[np.where(y > self.classes)] = self.classes
     
             if self.loss_shape is not None:
                 y = np.reshape(y, self.loss_shape)
-            print("before to_categorical")
             max_val = np.max(y)
             if max_val > 21:
                 print ("max_val exceeds: {}".format(max_val))
             y = to_categorical(y, self.classes + 1)
-            print("after to_categorical")
 
             batch_x[i] = x
             batch_y[i] = y
