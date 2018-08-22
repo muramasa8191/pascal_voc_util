@@ -88,6 +88,7 @@ class VocImageDataGenerator(object):
         self.shear_range = shear_range
         self.pad_size = pad_size
         self.fill_mode = fill_mode
+        self.label_cval = label_cval
         self.channel_shift_range = channel_shift_range
         if np.isscalar(zoom_range):
             self.zoom_range = [1 - zoom_range, 1 + zoom_range]
