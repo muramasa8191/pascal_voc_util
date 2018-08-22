@@ -101,7 +101,7 @@ class VocImageDataGenerator(object):
                  vertical_flip=False,
                  rescale=None,
                  preprocessing_function=None,
-                 data_format=None,
+                 data_format='channels_last',
                  validation_split=0.0,
                  label_cval=255):
         if data_format is None:
@@ -280,7 +280,7 @@ class VocImageIterator(Iterator):
                  crop_mode='none', pad_size=None, 
                  ignore_label=255, label_cval=255,
                  batch_size=32, shuffle=False, seed=None,
-                 data_format=None, loss_shape=None):
+                 data_format='channels_last', loss_shape=None):
         if data_format is None:
             data_format = backend.image_data_format()
         self.directory = directory
