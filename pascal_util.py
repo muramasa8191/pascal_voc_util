@@ -263,20 +263,20 @@ img_col_index], 'DATA ERROR: Different shape of data and label!\ndata shape: %s,
                       
         if self.channel_shift_range != 0:
             x = random_channel_shift(x, self.channel_shift_range, img_channel_index)
-            if self.horizontal_flip:
-                if np.random.random() < 0.5:
-                    x = flip_axis(x, img_col_index)
-                    y = flip_axis(y, img_col_index)
+        if self.horizontal_flip:
+            if np.random.random() < 0.5:
+                x = flip_axis(x, img_col_index)
+                y = flip_axis(y, img_col_index)
                       
-                    if self.vertical_flip:
-                        if np.random.random() < 0.5:
-                            x = flip_axis(x, img_row_index)
-                            y = flip_axis(y, img_row_index)
+        if self.vertical_flip:
+            if np.random.random() < 0.5:
+                x = flip_axis(x, img_row_index)
+                y = flip_axis(y, img_row_index)
                                                       
-                            if self.crop_mode == 'center':
-                                x, y = pair_center_crop(x, y, self.crop_size, self.data_format)
-                            elif self.crop_mode == 'random':
-                                x, y = pair_random_crop(x, y, self.crop_size, self.data_format)
+        if self.crop_mode == 'center':
+            x, y = pair_center_crop(x, y, self.crop_size, self.data_format)
+        elif self.crop_mode == 'random':
+            x, y = pair_random_crop(x, y, self.crop_size, self.data_format)
 
         return x, y
 
@@ -381,8 +381,9 @@ class VocImageIterator(Iterator):
     
             if self.loss_shape is not None:
                 y = np.reshape(y, self.loss_shape)
-            
+            print("before to_categorical")
             y = to_categorical(y, self.classes + 1)
+            print("after to_categorical")
 
             batch_x[i] = x
             batch_y[i] = y
