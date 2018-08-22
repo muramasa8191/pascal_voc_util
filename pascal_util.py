@@ -382,6 +382,9 @@ class VocImageIterator(Iterator):
             if self.loss_shape is not None:
                 y = np.reshape(y, self.loss_shape)
             print("before to_categorical")
+            max_val = np.max(y)
+            if max_val > 21:
+                print ("max_val exceeds: {}".format(max_val))
             y = to_categorical(y, self.classes + 1)
             print("after to_categorical")
 
