@@ -385,7 +385,8 @@ class VocImageIterator(Iterator):
             if max_val > 21:
                 print ("max_val exceeds: {}".format(max_val))
             y = to_categorical(y, self.classes + 1)
-
+            if x.ndim > 3:
+                print ("ndmi:{}, j={}", x.ndim, j)
             batch_x[i] = x
             batch_y[i] = y
                 
