@@ -254,6 +254,7 @@ class VocImageIterator(Iterator):
         self.label_cval = label_cval
         self.data_format = data_format
         self.loss_shape = loss_shape
+        self.pad_size = pad_size
         
         channel = 3
         if color_mode != 'rgb':
