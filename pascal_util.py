@@ -27,7 +27,7 @@ def crossentropy_without_ambiguous(y_true, y_pred):
     
     return cross_entropy_mean
 
-def categorical_accuracy_without_ambigyous():
+def categorical_accuracy_without_ambigyous(y_true, y_pred):
     nb_classes = K.int_shape(y_pred)[-1]
     y_pred = K.reshape(y_pred, (-1, nb_classes))
     
