@@ -69,6 +69,13 @@ class VocImageDataGenerator(object):
                  data_format=None,
                  validation_split=0.0,
                  label_cval=255):
+        if data_format == 'default':
+            data_format = K.image_data_format()
+        if data_format not in {'channels_last', 'channels_first'}:
+            raise Exception('data_format should be channels_last (channel after row and '
+                            'column) or channels_first (channel before row and column). '
+                            'Received arg: ', data_format)
+        self.data_format = data_format
         self.image_shape = image_shape
         self.rescale = rescale
         if crop_mode not in {'none', 'random', 'center'}:
