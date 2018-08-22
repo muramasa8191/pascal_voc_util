@@ -300,6 +300,7 @@ class VocImageIterator(Iterator):
         self.loss_shape = loss_shape
         self.pad_size = pad_size
         
+        print("target_size={}".format(target_size))
         channel = 3
         if color_mode != 'rgb':
             channel = 1
@@ -308,6 +309,7 @@ class VocImageIterator(Iterator):
             self.image_shape = self.target_size + (channel,)
         else:
             self.image_shape = (channel,) + self.target_size
+        print ("image_shape={}".format(self.image_shape.shape))
         self.classes = classes
         if class_mode not in {'categorical', 'binary', 'sparse', 'input', None}:
             raise ValueError('Invalid class_mode:', class_mode,
