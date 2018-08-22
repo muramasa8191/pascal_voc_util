@@ -393,7 +393,7 @@ class VocImageIterator(Iterator):
                 
         batch_x = preprocess_input(batch_x)
         
-        if class_mode == 'binary':
+        if self.class_mode == 'binary':
             return batch_x
 
         return batch_x, batch_y
