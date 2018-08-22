@@ -292,9 +292,7 @@ class VocImageIterator(Iterator):
             data_format = backend.image_data_format()
         self.directory = directory
         self.image_data_generator = image_data_generator
-        print("target_size={}".format(target_size))
         self.target_size = tuple(target_size)
-        print("target_size={}".format(target_size))
         self.ignore_label = ignore_label
         self.crop_mode = crop_mode
         self.label_cval = label_cval
@@ -319,7 +317,7 @@ class VocImageIterator(Iterator):
                              ' or None.')
         self.class_mode = class_mode
         if class_mode == 'categorical':
-            self.label_shape = target_size + (classes,)
+            self.label_shape = target_size + (classes+1,)
         elif class_mode == 'binary':
             self.label_shape = target_size + (1,)
 
