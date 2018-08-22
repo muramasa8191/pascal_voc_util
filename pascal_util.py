@@ -40,6 +40,41 @@ def categorical_accuracy_without_ambigyous(y_true, y_pred):
                        
     return K.sum(tf.to_float(legal_labels & K.equal(K.argmax(y_true, axis=-1), K.argmax(y_pred, axis=-1)))) / K.sum(tf.to_float(legal_labels))
 
+def pair_random_crop(x, y, random_crop_size, data_format, sync_seed=None, **kwargs):
+    np.random.seed(sync_seed)
+    if data_format == 'channels_first':
+        h, w = x.shape[1], x.shape[2]
+    elif data_format == 'channels_last':
+        h, w = x.shape[0], x.shape[1]
+    rangeh = (h - random_crop_size[0]) // 2
+    rangew = (w - random_crop_size[1]) // 2
+    offseth = 0 if rangeh == 0 else np.random.randint(rangeh)
+    offsetw = 0 if rangew == 0 else np.random.randint(rangew)
+    
+    h_start, h_end = offseth, offseth + random_crop_size[0]
+    w_start, w_end = offsetw, offsetw + random_crop_size[1]
+    if data_format == 'channels_first':
+        return x[:, h_start:h_end, w_start:w_end], y[:, h_start:h_end, h_start:h_end]
+    elif data_format == 'channels_last':
+        return x[h_start:h_end, w_start:w_end, :], y[h_start:h_end, w_start:w_end, :]
+
+def pair_center_crop(x, y, center_crop_size, data_format, **kwargs):
+    if data_format == 'channels_first':
+        centerh, centerw = x.shape[1] // 2, x.shape[2] // 2
+    elif data_format == 'channels_last':
+        centerh, centerw = x.shape[0] // 2, x.shape[1] // 2
+    lh, lw = center_crop_size[0] // 2, center_crop_size[1] // 2
+    rh, rw = center_crop_size[0] - lh, center_crop_size[1] - lw
+    
+    h_start, h_end = centerh - lh, centerh + rh
+    w_start, w_end = centerw - lw, centerw + rw
+    if data_format == 'channels_first':
+        return x[:, h_start:h_end, w_start:w_end], \
+            y[:, h_start:h_end, w_start:w_end]
+    elif data_format == 'channels_last':
+        return x[h_start:h_end, w_start:w_end, :], \
+            y[h_start:h_end, w_start:w_end, :]
+
 class VocImageDataGenerator(object):
     def __init__(self,
                  image_shape=(224, 224, 3),
@@ -327,7 +362,7 @@ class VocImageIterator(Iterator):
                 if self.loss_shape is not None:
                     batch_y = np.zeros((current_batch_size,) + self.loss_shape)
                 else:
-                    batch_y = np.zeros((current_batch_size,) + y.shape)
+                    batch_y = np.zeros((current_batch_size,) + self.label_shape)
             
             x, y = self.image_data_generator.random_transform(x, y)
             x = self.image_data_generator.standardize(x)
