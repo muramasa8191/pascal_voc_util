@@ -221,7 +221,7 @@ class VocImageIterator(Iterator):
                  target_size=(256, 256), color_mode='rgb',
                  classes=None, class_mode='categorical',
                  crop_mode='none', pad_size=None, 
-                 ignore_label=255, label_cval=255
+                 ignore_label=255, label_cval=255,
                  batch_size=32, shuffle=False, seed=None,
                  data_format=None, loss_shape=None):
         if data_format is None:
