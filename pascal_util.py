@@ -12,7 +12,29 @@ TRAIN_LIST_FILE_NAME = 'train.txt'
 TRAIN_CLASS_FILE_NAME = 'trainval.txt'
 VALIDATION_LIST_FILE_NAME = 'val.txt'
 
-class VocImageDataGenerator(ImageDataGenerator):
+def crossentropy_without_ambiguous(y_true, y_pred):
+    y_pred = K.reshape(y_pred, (-1, K.int_shape(y_pred)[-1]))
+    log_softmax = tf.nn.log_softmax(y_pred)
+    
+    unpacked = tf.unstack(y_true, axis=-1)
+    y_true = tf.stack(unpacked[:-1], axis=-1)
+    
+    cross_entropy = -K.sum(y_true * log_softmax, axis=1)
+    cross_entropy_mean = K.mean(cross_entropy)
+    
+    return cross_entropy_mean
+
+def categorical_accuracy_without_ambigyous():
+    nb_classes = K.int_shape(y_pred)[-1]
+    y_pred = K.reshape(y_pred, (-1, nb_classes))
+    
+    unpacked = tf.unstack(y_true, axis=-1)
+    legal_labels = ~tf.cast(unpacked[-1], tf.bool)
+    y_true = tf.stack(unpacked[:-1], axis=-1)
+                       
+    return K.sum(tf.to_float(legal_labels & K.equal(K.argmax(y_true, axis=-1), K.argmax(y_pred, axis=-1)))) / K.sum(tf.to_float(legal_labels))
+
+class VocImageDataGenerator(object):
     def __init__(self,
                  image_shape=(224, 224, 3),
                  featurewise_center=False,
@@ -27,9 +49,13 @@ class VocImageDataGenerator(ImageDataGenerator):
                  brightness_range=None,
                  shear_range=0.,
                  zoom_range=0.,
+                 zoom_maintain_shape=True,
                  channel_shift_range=0.,
                  fill_mode='nearest',
                  cval=0.,
+                 crop_mode='none',
+                 crop_size=(0, 0),
+                 pad_size=None,
                  horizontal_flip=False,
                  vertical_flip=False,
                  rescale=None,
@@ -37,36 +63,40 @@ class VocImageDataGenerator(ImageDataGenerator):
                  data_format=None,
                  validation_split=0.0):
         self.image_shape = image_shape
-        super(VocImageDataGenerator, self).__init__(featurewise_center=featurewise_center,
-                                                    samplewise_center=samplewise_center,
-                                                    featurewise_std_normalization=featurewise_std_normalization,
-                                                    samplewise_std_normalization=samplewise_std_normalization,
-                                                    zca_whitening=zca_whitening,
-                                                    zca_epsilon=zca_epsilon,
-                                                    rotation_range=rotation_range,
-                                                    width_shift_range=width_shift_range,
-                                                    height_shift_range=height_shift_range,
-                                                    brightness_range=brightness_range,
-                                                    shear_range=shear_range,
-                                                    zoom_range=zoom_range,
-                                                    channel_shift_range=channel_shift_range,
-                                                    fill_mode=fill_mode,
-                                                    cval=cval,
-                                                    horizontal_flip=horizontal_flip,
-                                                    vertical_flip=vertical_flip,
-                                                    rescale=rescale,
-                                                    preprocessing_function=preprocessing_function,
-                                                    data_format=data_format,
-                                                    validation_split=validation_split)
+        self.rescale = rescale
+        if crop_mode not in {'none', 'random', 'center'}:
+            raise Exception('crop_mode should be "none" or "random" or "center" '
+                            'Received arg: ', crop_mode)
+        self.crop_mode = crop_mode
+        self.crop_size = crop_size
+        self.width_shift_range = width_shift_range
+        self.height_shift_range = height_shift_range
+        self.shear_range = shear_range
+        self.pad_size = pad_size
+        self.fill_mode = fill_mode
+        self.channel_shift_range = channel_shift_range
+        if np.isscalar(zoom_range):
+            self.zoom_range = [1 - zoom_range, 1 + zoom_range]
+        elif len(zoom_range) == 2:
+            self.zoom_range = [zoom_range[0], zoom_range[1]]
+        else:
+            raise Exception('zoom_range should be a float or '
+                            'a tuple or list of two floats. '
+                            'Received arg: ', zoom_range)
+        self.zoom_maintain_shape = zoom_maintain_shape
 
     def flow_from_imageset(self, directory,
                         target_size=(256, 256),
                         classes=None, class_mode='categorical',
                         batch_size=32, shuffle=True, seed=None):
+        if self.crop_mode == 'random' or self.crop_mode == 'center':
+            target_size = self.crop_size
         return VocImageIterator(
             directory, self,
             target_size=target_size,
-            classes=classes, class_mode=class_mode,
+            crop_mode=self.crop_mode,
+            pad_size=self.pad_size,
+           classes=classes, class_mode=class_mode,
             data_format=self.data_format,
             batch_size=batch_size, shuffle=shuffle, seed=seed)
 
@@ -107,18 +137,104 @@ class VocImageDataGenerator(ImageDataGenerator):
 
 #        print ("called standardize: mean={}, std={}".format(self.mean, self.std))
                
+    def random_transform(self, x, y):
+        # x is a single image, so it doesn't have image number at index 0
+        img_row_index = 0 if self.data_format == 'channel_last' else 1
+        img_col_index = 1 if self.data_format == 'channel_last' else 2
+        img_channel_index = 2 if self.data_format == 'channel_last' else 0 
+        if self.crop_mode == 'none':
+            crop_size = (x.shape[img_row_index], x.shape[img_col_index])
+        else:
+            crop_size = self.crop_size
+        
+        assert x.shape[img_row_index] == y.shape[img_row_index] and x.shape[img_col_index] == y.shape[
+img_col_index], 'DATA ERROR: Different shape of data and label!\ndata shape: %s, label shape: %s' % (str(x.shape), str(y.shape))
+
+        # rotation
+        if self.rotation_range:
+            theta = np.pi / 180 * np.random.uniform(-self.rotation_range, self.rotation_range)
+        else:
+            theta = 0
+        rotation_matrix = np.array([[np.cos(theta), -np.sin(theta), 0],
+                                    [np.sin(theta), np.cos(theta), 0],
+                                    [0, 0, 1]])
+        if self.height_shift_range:
+            tx = np.random.uniform(-self.height_shift_range, self.height_shift_range) * crop_size[0]
+        else:
+            tx = 0
+
+        if self.width_shift_range:
+            ty = np.random.uniform(-self.width_shift_range, self.width_shift_range) * crop_size[1]
+        else:
+            ty = 0
+
+        translation_matrix = np.array([[1, 0, tx],
+                                       [0, 1, ty],
+                                       [0, 0, 1]])
+        if self.shear_range:
+            shear = np.random.uniform(-self.shear_range, self.shear_range)
+        else:
+            shear = 0
+        shear_matrix = np.array([[1, -np.sin(shear), 0],
+                                 [0, np.cos(shear), 0],
+                                 [0, 0, 1]])
+
+        if self.zoom_range[0] == 1 and self.zoom_range[1] == 1:
+            zx, zy = 1, 1
+        else:
+            zx, zy = np.random.uniform(self.zoom_range[0], self.zoom_range[1], 2)
+        if self.zoom_maintain_shape:
+            zy = zx
+        zoom_matrix = np.array([[zx, 0, 0],
+                                  [0, zy, 0],
+                                  [0, 0, 1]])
+                              
+        transform_matrix = np.dot(np.dot(np.dot(rotation_matrix, translation_matrix), shear_matrix), zoom_matrix)
+
+        h, w = x.shape[img_row_index], x.shape[img_col_index]
+        transform_matrix = transform_matrix_offset_center(transform_matrix, h, w)
+
+        x = apply_transform(x, transform_matrix, img_channel_index, fill_mode=self.fill_mode, cval=self.cval)
+        y = apply_transform(y, transform_matrix, img_channel_index, fill_mode='constant', cval=self.label_cval)
+                      
+        if self.channel_shift_range != 0:
+            x = random_channel_shift(x, self.channel_shift_range, img_channel_index)
+            if self.horizontal_flip:
+                if np.random.random() < 0.5:
+                    x = flip_axis(x, img_col_index)
+                    y = flip_axis(y, img_col_index)
+                      
+                    if self.vertical_flip:
+                        if np.random.random() < 0.5:
+                            x = flip_axis(x, img_row_index)
+                            y = flip_axis(y, img_row_index)
+                                                      
+                            if self.crop_mode == 'center':
+                                x, y = pair_center_crop(x, y, self.crop_size, self.data_format)
+                            elif self.crop_mode == 'random':
+                                x, y = pair_random_crop(x, y, self.crop_size, self.data_format)
+
+        return x, y
+
 class VocImageIterator(Iterator):
     def __init__(self, directory, image_data_generator,
                  target_size=(256, 256), color_mode='rgb',
                  classes=None, class_mode='categorical',
+                 crop_mode='none', pad_size=None, 
+                 ignore_label=255, label_cval=255
                  batch_size=32, shuffle=False, seed=None,
-                 data_format=None):
+                 data_format=None, loss_shape=None):
         if data_format is None:
             data_format = backend.image_data_format()
         self.directory = directory
         self.image_data_generator = image_data_generator
         self.target_size = tuple(target_size)
+        self.ignore_label = ignore_label
+        self.crop_mode = crop_mode
+        self.label_cval = label_cval
         self.data_format = data_format
+        self.loss_shape = loss_shape
+        
         channel = 3
         if color_mode != 'rgb':
             channel = 1
@@ -157,25 +273,67 @@ class VocImageIterator(Iterator):
                                  seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
-#        with self.lock:
-#            index_array = next(self.index_generator)
-        batch_x = np.zeros((len(index_array),) + self.image_shape, dtype=K.floatx())
-        batch_y = np.zeros((len(index_array),) + self.label_shape, dtype=np.int8)
+
+        current_batch_size = len(index_array)
+        if self.target_size:
+            batch_x = np.zeros(current_batch_size,) + self.image_shape, dtype=K.floatx())
+            batch_y = np.zeros(current_batch_size,) + self.label_shape, dtype=np.int8)
 
         grayscale = self.color_mode == 'grayscale'
         
         for i, j in enumerate(index_array):
-            x = load_img(self.train_filenames[j], grayscale, self.image_shape)
-            x = img_to_array(x, data_format=self.data_format)
+            img = load_img(self.train_filenames[j], grayscale, target_size=None)
+            label = Image.open(self.label_filenames[j])
+
+            if self.target_size is not None:
+                if self.crop_mode != 'none':
+                    x = img_to_array(img, data_format=self.data_format)
+                    y = img_to_array(label, data_format=self.data_format).astype(int)
+                    img_w, img_h = img.size
+                    if self.pad_size:
+                        pad_w = max(self.pad_size[1] - img_w, 0)
+                        pad_h = max(self.pad_size[0] - img_h, 0)
+                    else:
+                        pad_w = max(self.target_size[1] - img_w, 0)
+                        pad_h = max(self.target_size[0] - img_h, 0)
+                    if self.data_format == 'channels_first':
+                        x = np.lib.pad(x, ((0, 0), (pad_h // 2, pad_h - pad_h // 2), (pad_w // 2, pad_w - pad_w // 2)), 'constant', constant_values=0.)
+                        y = np.lib.pad(y, ((0, 0), (pad_h // 2, pad_h - pad_h // 2), (pad_w // 2, pad_w - pad_w // 2)),
+                                       'constant', constant_values=self.label_cval)
+                    elif self.data_format == 'channels_last':
+                        x = np.lib.pad(x, ((pad_h // 2, pad_h - pad_h // 2), (pad_w // 2, pad_w - pad_w // 2), (0, 0)), 'constant', constant_values=0.)
+                        y = np.lib.pad(y, ((pad_h // 2, pad_h - pad_h // 2), (pad_w // 2, pad_w - pad_w // 2), (0, 0)), 'constant', constant_values=self.label_cval)
+                else:
+                    x = img_to_array(img.resize((self.target_size[1], self.target_size[0]),
+                            Image.BILINEAR), data_format=self.data_format)
+                    y = img_to_array(label.resize((self.target_size[1], self.target_size[0]), 
+                            Image.NEAREST), data_format=self.data_format).astype(int)
+
+            else:
+                batch_x = np.zeros((current_batch_size,) + x.shape)
+                if self.loss_shape is not None:
+                    batch_y = np.zeros((current_batch_size,) + self.loss_shape)
+                else:
+                    batch_y = np.zeros((current_batch_size,) + y.shape)
+            
+            x, y = self.image_data_generator.random_transform(x, y)
             x = self.image_data_generator.standardize(x)
+            
+            if self.ignore_label:
+                y[np.where(y == self.ignore_label)] = self.classes
+    
+            if self.loss_shape is not None:
+                y = np.reshape(y, self.loss_shape)
+            
+            y = to_categorical(y, self.classes + 1)
+
             batch_x[i] = x
-            y = Image.open(self.label_filenames[j])
-            if y.size != self.target_size:
-                y = y.resize(self.target_size)
-            y = img_to_array(y, self.data_format)
-            y[y == 255] = 0
-            y = to_categorical(y, self.classes)
             batch_y[i] = y
+                
+        batch_x = preprocess_input(batch_x)
+        
+        if class_mode = 'binary':
+            return batch_x
         
         return batch_x, batch_y
                
