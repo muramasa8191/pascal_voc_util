@@ -89,6 +89,8 @@ class VocImageDataGenerator(object):
         self.pad_size = pad_size
         self.fill_mode = fill_mode
         self.label_cval = label_cval
+        self.featurewise_center = featurewise_center
+        self.featurewise_std_normalization = featurewise_std_normalization
         self.channel_shift_range = channel_shift_range
         if np.isscalar(zoom_range):
             self.zoom_range = [1 - zoom_range, 1 + zoom_range]
@@ -274,14 +276,6 @@ class VocImageIterator(Iterator):
             self.label_shape = target_size + (1,)
 
         self.train_filenames, self.label_filenames = get_train_files(directory)
-        if self.image_data_generator.featurewise_center or self.image_data_generator.featurewise_std_normalization: 
-            images = []
-            for filename in self.train_filenames:
-                image = load_img(filename, False, self.image_shape)
-                image = img_to_array(image, data_format=self.data_format)
-                images.append(image)
-                
-            self.image_data_generator.fit(images)
         
         self.samples = len(self.train_filenames)
 
