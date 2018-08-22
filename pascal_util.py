@@ -6,6 +6,7 @@ import tensorflow as tf
 from PIL import Image
 from tensorflow.python.keras.utils import to_categorical
 from tensorflow.python.keras.preprocessing.image import *
+from tensorflow.python.keras.applications.imagenet_utils import preprocess_input
 
 CLASSES = 21
 SEGMENTATION_IMAGE_DIR = 'ImageSets/Segmentation/'
@@ -383,12 +384,9 @@ class VocImageIterator(Iterator):
             if self.loss_shape is not None:
                 y = np.reshape(y, self.loss_shape)
             max_val = np.max(y)
-            if max_val > 21:
-                print ("max_val exceeds: {}".format(max_val))
+
             y = to_categorical(y, self.classes + 1)
-            if x.ndim > 3:
-                print ("ndmi:{}, j={}", x.ndim, j)
-            print ("x.shape={}, batch_x[i]={}".format(x.shape, batch_x[i].shape))
+
             batch_x[i] = x
             batch_y[i] = y
                 
