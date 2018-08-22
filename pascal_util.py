@@ -202,10 +202,10 @@ class VocImageDataGenerator(object):
         else:
             crop_size = self.crop_size
         
-        print ("x.shape[{}] == y.shape[{}] and x.shape[{}] == y.shape[{}]:{}=={} and {} == {}".format(img_row_index, img_row_index, img_col_index, img_col_index, x.shape[img_row_index], y.shape[img_row_index], x.shape[img_col_index], y.shape[img_col_index]))
+#        print ("x.shape[{}] == y.shape[{}] and x.shape[{}] == y.shape[{}]:{}=={} and {} == {}".format(img_row_index, img_row_index, img_col_index, img_col_index, x.shape[img_row_index], y.shape[img_row_index], x.shape[img_col_index], y.shape[img_col_index]))
         
-#        assert x.shape[img_row_index] == y.shape[img_row_index] and x.shape[img_col_index] == y.shape[
-#img_col_index], 'DATA ERROR: Different shape of data and label!\ndata shape: %s, label shape: %s' % (str(x.shape), str(y.shape))
+        assert x.shape[img_row_index] == y.shape[img_row_index] and x.shape[img_col_index] == y.shape[
+img_col_index], 'DATA ERROR: Different shape of data and label!\ndata shape: %s, label shape: %s' % (str(x.shape), str(y.shape))
 
         # rotation
         if self.rotation_range:
