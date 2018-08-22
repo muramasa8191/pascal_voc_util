@@ -382,7 +382,9 @@ class VocImageIterator(Iterator):
         
         if class_mode == 'binary':
             return batch_x
-        
+        print (batch_x.shape)
+        print (batch_y.shape)
+
         return batch_x, batch_y
                
 def image_generator(file_paths, size=None, normalization=True):
