@@ -321,7 +321,8 @@ class VocImageIterator(Iterator):
             self.label_shape = target_size + (classes+1,)
         elif class_mode == 'binary':
             self.label_shape = target_size + (1,)
-
+        self.class_mode = class_mode
+        
         self.train_filenames, self.label_filenames = get_train_files(directory)
         
         self.samples = len(self.train_filenames)
