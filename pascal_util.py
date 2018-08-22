@@ -5,7 +5,7 @@ import keras.backend as K
 import tensorflow as tf
 from PIL import Image
 from tensorflow.python.keras.utils import to_categorical
-from tensorflow.python.keras.preprocessing.image import ImageDataGenerator, img_to_array, Iterator, load_img
+from tensorflow.python.keras.preprocessing.image import ImageDataGenerator, img_to_array, Iterator, load_img, transform_matrix_offset_center
 
 CLASSES = 21
 SEGMENTATION_IMAGE_DIR = 'ImageSets/Segmentation/'
