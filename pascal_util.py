@@ -95,6 +95,7 @@ class VocImageDataGenerator(object):
     def flow_from_imageset(self, directory,
                         target_size=(256, 256),
                         classes=None, class_mode='categorical',
+                        loss_shape=None, ignore_label=255,
                         batch_size=32, shuffle=True, seed=None):
         if self.crop_mode == 'random' or self.crop_mode == 'center':
             target_size = self.crop_size
@@ -103,7 +104,8 @@ class VocImageDataGenerator(object):
             target_size=target_size,
             crop_mode=self.crop_mode,
             pad_size=self.pad_size,
-           classes=classes, class_mode=class_mode,
+            loss_shape=loss_shape, ignore_label=ignore_label,
+            classes=classes, class_mode=class_mode,
             data_format=self.data_format,
             label_cval = self.label_cval,
             batch_size=batch_size, shuffle=shuffle, seed=seed)
