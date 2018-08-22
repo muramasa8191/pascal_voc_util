@@ -292,7 +292,9 @@ class VocImageIterator(Iterator):
             data_format = backend.image_data_format()
         self.directory = directory
         self.image_data_generator = image_data_generator
+        print("target_size={}".format(target_size))
         self.target_size = tuple(target_size)
+        print("target_size={}".format(target_size))
         self.ignore_label = ignore_label
         self.crop_mode = crop_mode
         self.label_cval = label_cval
@@ -300,7 +302,6 @@ class VocImageIterator(Iterator):
         self.loss_shape = loss_shape
         self.pad_size = pad_size
         
-        print("target_size={}".format(target_size))
         channel = 3
         if color_mode != 'rgb':
             channel = 1
@@ -309,7 +310,7 @@ class VocImageIterator(Iterator):
             self.image_shape = self.target_size + (channel,)
         else:
             self.image_shape = (channel,) + self.target_size
-        print ("image_shape={}".format(self.image_shape.shape))
+
         self.classes = classes
         if class_mode not in {'categorical', 'binary', 'sparse', 'input', None}:
             raise ValueError('Invalid class_mode:', class_mode,
