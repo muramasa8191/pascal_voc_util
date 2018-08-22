@@ -69,7 +69,7 @@ class VocImageDataGenerator(object):
                  data_format=None,
                  validation_split=0.0,
                  label_cval=255):
-        if data_format == 'default':
+        if data_format is None:
             data_format = K.image_data_format()
         if data_format not in {'channels_last', 'channels_first'}:
             raise Exception('data_format should be channels_last (channel after row and '
