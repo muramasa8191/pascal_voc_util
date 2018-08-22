@@ -101,7 +101,7 @@ class VocImageDataGenerator(object):
                  vertical_flip=False,
                  rescale=None,
                  preprocessing_function=None,
-                 data_format='channels_last',
+                 data_format=None,
                  validation_split=0.0,
                  label_cval=255):
         if data_format is None:
@@ -194,9 +194,9 @@ class VocImageDataGenerator(object):
                
     def random_transform(self, x, y):
         # x is a single image, so it doesn't have image number at index 0
-        img_row_index = 0 if self.data_format == 'channel_last' else 1
-        img_col_index = 1 if self.data_format == 'channel_last' else 2
-        img_channel_index = 2 if self.data_format == 'channel_last' else 0 
+        img_row_index = 0 if self.data_format == 'channels_last' else 1
+        img_col_index = 1 if self.data_format == 'channels_last' else 2
+        img_channel_index = 2 if self.data_format == 'channels_last' else 0 
         if self.crop_mode == 'none':
             crop_size = (x.shape[img_row_index], x.shape[img_col_index])
         else:
@@ -280,7 +280,7 @@ class VocImageIterator(Iterator):
                  crop_mode='none', pad_size=None, 
                  ignore_label=255, label_cval=255,
                  batch_size=32, shuffle=False, seed=None,
-                 data_format='channels_last', loss_shape=None):
+                 data_format=None, loss_shape=None):
         if data_format is None:
             data_format = backend.image_data_format()
         self.directory = directory
