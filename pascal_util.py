@@ -276,8 +276,8 @@ class VocImageIterator(Iterator):
 
         current_batch_size = len(index_array)
         if self.target_size:
-            batch_x = np.zeros(current_batch_size,) + self.image_shape, dtype=K.floatx())
-            batch_y = np.zeros(current_batch_size,) + self.label_shape, dtype=np.int8)
+            batch_x = np.zeros((current_batch_size,) + self.image_shape, dtype=K.floatx())
+            batch_y = np.zeros((current_batch_size,) + self.label_shape, dtype=np.int8)
 
         grayscale = self.color_mode == 'grayscale'
         
