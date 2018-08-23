@@ -38,7 +38,7 @@ def crossentropy_without_ambiguous(y_true, y_pred):
 
 def categorical_accuracy_without_ambiguous(y_true, y_pred):
 
-    legal_labels = tf.not_equal(y_true, CLASSES)
+    legal_labels = tf.not_equal(K.argmax(y_true, axis=-1), CLASSES)
 
     e = K.equal(K.argmax(y_true, axis=-1), K.argmax(y_pred, axis=-1))
     s = tf.to_float(legal_labels & e)
