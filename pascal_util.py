@@ -38,9 +38,7 @@ def crossentropy_without_ambiguous(y_true, y_pred):
 
 def categorical_accuracy_without_ambiguous(y_true, y_pred):
 
-    y_true = K.one_hot(tf.to_int32(K.flatten(y_true)), K.int_shape(y_pred)[-1]+1)
-    unpacked = tf.unstack(y_true, axis=-1)
-    y_true = tf.stack(unpacked[:-1], axis=-1)
+    y_true = K.one_hot(tf.to_int32(K.flatten(y_true)), CLASSES+1, axis=-1)
 
     legal_labels = tf.not_equal(y_true, CLASSES)
                        
