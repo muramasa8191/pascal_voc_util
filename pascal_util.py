@@ -146,7 +146,7 @@ class VocImageDataGenerator(object):
         self.zoom_maintain_shape = zoom_maintain_shape
 
     def flow_from_imageset(self, directory,
-                        target_size=(256, 256),
+                        target_size=(256, 256), normalize=False,
                         classes=None, class_mode='categorical',
                         loss_shape=None, ignore_label=255,
                         batch_size=32, shuffle=True, seed=None):
@@ -161,6 +161,7 @@ class VocImageDataGenerator(object):
             classes=classes, class_mode=class_mode,
             data_format=self.data_format,
             label_cval = self.label_cval,
+            normalize = normalize,
             batch_size=batch_size, shuffle=shuffle, seed=seed)
 
     def standardize(self, x):
@@ -288,7 +289,8 @@ class VocImageIterator(Iterator):
                  crop_mode='none', pad_size=None, 
                  ignore_label=255, label_cval=255,
                  batch_size=32, shuffle=False, seed=None,
-                 data_format=None, loss_shape=None):
+                 data_format=None, loss_shape=None,
+                 normalize=False):
         if data_format is None:
             data_format = backend.image_data_format()
         self.directory = directory
@@ -300,6 +302,7 @@ class VocImageIterator(Iterator):
         self.data_format = data_format
         self.loss_shape = loss_shape
         self.pad_size = pad_size
+        self.normalize = normalize
         
         channel = 3
         if color_mode != 'rgb':
@@ -376,6 +379,8 @@ class VocImageIterator(Iterator):
                 else:
                     batch_y = np.zeros((current_batch_size,) + self.label_shape)
             
+            if self.normalize:
+                x = x / 255.
             x, y = self.image_data_generator.random_transform(x, y)
             x = self.image_data_generator.standardize(x)
             
