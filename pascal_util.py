@@ -16,34 +16,29 @@ VALIDATION_LIST_FILE_NAME = 'val.txt'
 
 def crossentropy_without_ambiguous(y_true, y_pred):
 
-    print ("crossentropy_without_ambiguous:")
-    print ("y_true.get_shape:{}".format(y_true.get_shape()))
-
-    return tf.nn.softmax_cross_entropy_with_logits(labels=y_true,
-                                               logits=y_pred)
-#    y_pred = K.reshape(y_pred, (-1, K.int_shape(y_pred)[-1]))
-#    log_softmax = tf.nn.log_softmax(y_pred)
-#    
-##    if y_true.get_shape()[-1] != CLASSES + 1:
-#    print ("crossentropy_without_ambiguous")
-#    print (y_true.get_shape())
-#    y_true = K.one_hot(tf.to_int32(K.flatten(y_true)), K.int_shape(y_pred)[-1]+1)
-#    unpacked = tf.unstack(y_true, axis=-1)
-#    y_true = tf.stack(unpacked[:-1], axis=-1)
-#    
-#    cross_entropy = -K.sum(y_true * log_softmax, axis=1)
-#    cross_entropy_mean = K.mean(cross_entropy)
-#    
-#    return cross_entropy_mean
+    y_pred = K.reshape(y_pred, (-1, K.int_shape(y_pred)[-1]))
+    log_softmax = tf.nn.log_softmax(y_pred)
+    
+    unpacked = tf.unstack(y_true, axis=-1)
+    y_true = tf.stack(unpacked[:-1], axis=-1)
+    
+    cross_entropy = -K.sum(y_true * log_softmax, axis=1)
+    cross_entropy_mean = K.mean(cross_entropy)
+    
+    return cross_entropy_mean
 
 def categorical_accuracy_without_ambiguous(y_true, y_pred):
 
     legal_labels = tf.not_equal(K.argmax(y_true, axis=-1), CLASSES)
 
-    e = K.equal(K.argmax(y_true, axis=-1), K.argmax(y_pred, axis=-1))
-    s = tf.to_float(legal_labels & e)
+    return K.sum(tf.to_float(legal_labels & K.equal(K.argmax(y_true, axis=-1), K.argmax(y_pred, axis=-1)))) / K.sum(tf.to_float(legal_labels))
+
+def categorical_accuracy_only_valid_classes(y_true, y_pred):
     
-    return K.sum(s) / K.sum(tf.to_float(legal_labels))
+    legal_labels = tf.not_equal(K.argmax(y_true, axis=-1), CLASSES)
+    forground = tf.not_equal(K.argmax(y_true, axis=-1), 0)
+    
+    return K.sum(tf.to_float(forground & legal_labels & K.equal(K.argmax(y_true, axis=-1), K.argmax(y_pred, axis=-1)))) / K.sum(tf.to_float(legal_labels & forground))
 
 def pair_random_crop(x, y, random_crop_size, data_format, sync_seed=None, **kwargs):
     np.random.seed(sync_seed)
