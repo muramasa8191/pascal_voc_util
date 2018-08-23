@@ -38,10 +38,9 @@ def crossentropy_without_ambiguous(y_true, y_pred):
 
 def categorical_accuracy_without_ambiguous(y_true, y_pred):
 
-    y_true = K.one_hot(tf.to_int32(K.flatten(y_true)), CLASSES+1)
-
+    print ("y_true:{}, y_pred:{}".format(y_true.get_shape(), y_pred.get_shape()))
     legal_labels = tf.not_equal(y_true, CLASSES)
-                       
+    print ("legal_labels.shape={}".format(legal_labels.get_shape()))
     return K.sum(tf.to_float(legal_labels & K.equal(K.argmax(y_true, axis=-1), K.argmax(y_pred, axis=-1)))) / K.sum(tf.to_float(legal_labels))
 
 def pair_random_crop(x, y, random_crop_size, data_format, sync_seed=None, **kwargs):
