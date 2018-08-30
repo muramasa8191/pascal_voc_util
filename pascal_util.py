@@ -4,9 +4,10 @@ import numpy as np
 import keras.backend as K
 import tensorflow as tf
 from PIL import Image
-from tensorflow.python.keras.utils import to_categorical
-from tensorflow.python.keras.preprocessing.image import *
-from tensorflow.python.keras.applications.imagenet_utils import preprocess_input
+from keras.utils import to_categorical
+from keras.preprocessing.image import *
+
+from keras.applications.imagenet_utils import preprocess_input
 
 CLASSES = 21
 SEGMENTATION_IMAGE_DIR = 'ImageSets/Segmentation/'
@@ -76,7 +77,7 @@ def pair_center_crop(x, y, center_crop_size, data_format, **kwargs):
         return x[h_start:h_end, w_start:w_end, :], \
             y[h_start:h_end, w_start:w_end, :]
 
-class VocImageDataGenerator(object):
+class VocImageDataGenerator(ImageDataGenerator):
     def __init__(self,
                  image_shape=(224, 224, 3),
                  featurewise_center=False,
@@ -145,6 +146,8 @@ class VocImageDataGenerator(object):
                             'Received arg: ', zoom_range)
         self.zoom_maintain_shape = zoom_maintain_shape
 
+        super(VocImageDataGenerator, self).__init__()
+
     def flow_from_imageset(self, directory,
                         target_size=(256, 256), normalize=False,
                         classes=None, class_mode='categorical',
@@ -202,83 +205,93 @@ class VocImageDataGenerator(object):
 #        print ("called standardize: mean={}, std={}".format(self.mean, self.std))
                
     def random_transform(self, x, y):
-        # x is a single image, so it doesn't have image number at index 0
-        img_row_index = 0 if self.data_format == 'channels_last' else 1
-        img_col_index = 1 if self.data_format == 'channels_last' else 2
-        img_channel_index = 2 if self.data_format == 'channels_last' else 0 
-        if self.crop_mode == 'none':
-            crop_size = (x.shape[img_row_index], x.shape[img_col_index])
-        else:
-            crop_size = self.crop_size
+#        # x is a single image, so it doesn't have image number at index 0
+#        img_row_index = 0 if self.data_format == 'channels_last' else 1
+#        img_col_index = 1 if self.data_format == 'channels_last' else 2
+#        img_channel_index = 2 if self.data_format == 'channels_last' else 0 
+#
+#        if self.crop_mode == 'none':
+#            crop_size = (x.shape[img_row_index], x.shape[img_col_index])
+#        else:
+#            crop_size = self.crop_size
+#        
+#        assert x.shape[img_row_index] == y.shape[img_row_index] and x.shape[img_col_index] == y.shape[
+#img_col_index], 'DATA ERROR: Different shape of data and label!\ndata shape: %s, label shape: %s' % (str(x.shape), str(y.shape))
+#
+#        # rotation
+#        if self.rotation_range:
+#            theta = np.pi / 180 * np.random.uniform(-self.rotation_range, self.rotation_range)
+#        else:
+#            theta = 0
+#        rotation_matrix = np.array([[np.cos(theta), -np.sin(theta), 0],
+#                                    [np.sin(theta), np.cos(theta), 0],
+#                                    [0, 0, 1]])
+#        if self.height_shift_range:
+#            tx = np.random.uniform(-self.height_shift_range, self.height_shift_range) * crop_size[0]
+#        else:
+#            tx = 0
+#
+#        if self.width_shift_range:
+#            ty = np.random.uniform(-self.width_shift_range, self.width_shift_range) * crop_size[1]
+#        else:
+#            ty = 0
+#
+#        translation_matrix = np.array([[1, 0, tx],
+#                                       [0, 1, ty],
+#                                       [0, 0, 1]])
+#        if self.shear_range:
+#            shear = np.random.uniform(-self.shear_range, self.shear_range)
+#        else:
+#            shear = 0
+#        shear_matrix = np.array([[1, -np.sin(shear), 0],
+#                                 [0, np.cos(shear), 0],
+#                                 [0, 0, 1]])
+#
+#        if self.zoom_range[0] == 1 and self.zoom_range[1] == 1:
+#            zx, zy = 1, 1
+#        else:
+#            zx, zy = np.random.uniform(self.zoom_range[0], self.zoom_range[1], 2)
+#        if self.zoom_maintain_shape:
+#            zy = zx
+#        zoom_matrix = np.array([[zx, 0, 0],
+#                                  [0, zy, 0],
+#                                  [0, 0, 1]])
+#                              
+#        transform_matrix = np.dot(np.dot(np.dot(rotation_matrix, translation_matrix), shear_matrix), zoom_matrix)
+#
+#        h, w = x.shape[img_row_index], x.shape[img_col_index]
+#        transform_matrix = ImageDataGenerator.transform_matrix_offset_center(transform_matrix, h, w)
+#
+#        x = ImageDataGenerator.apply_transform(x, transform_matrix, img_channel_index, fill_mode=self.fill_mode, cval=self.cval)
+#        y = ImageDataGenerator.apply_transform(y, transform_matrix, img_channel_index, fill_mode='constant', cval=self.label_cval)
+#        print ("* illegal pixel:{}".format(np.sum(y > 21) - np.sum(y == 255)))
+#    
+#        if self.channel_shift_range != 0:
+#            x = random_channel_shift(x, self.channel_shift_range, img_channel_index)
+#        if self.horizontal_flip:
+#            if np.random.random() < 0.5:
+#                x = flip_axis(x, img_col_index)
+#                y = flip_axis(y, img_col_index)
+#                      
+#        if self.vertical_flip:
+#            if np.random.random() < 0.5:
+#                x = flip_axis(x, img_row_index)
+#                y = flip_axis(y, img_row_index)
+               
+        params = ImageDataGenerator.get_random_transform(self, img_shape=x.shape, seed=None)
         
-#        print ("x.shape[{}] == y.shape[{}] and x.shape[{}] == y.shape[{}]:{}=={} and {} == {}".format(img_row_index, img_row_index, img_col_index, img_col_index, x.shape[img_row_index], y.shape[img_row_index], x.shape[img_col_index], y.shape[img_col_index]))
+        x = ImageDataGenerator.apply_transform(self, x, params)
+        fill_mode = self.fill_mode
+        self.fill_mode = 'constant'
+        y = ImageDataGenerator.apply_transform(self, y, params)
+        self.fill_mode = fill_mode
         
-        assert x.shape[img_row_index] == y.shape[img_row_index] and x.shape[img_col_index] == y.shape[
-img_col_index], 'DATA ERROR: Different shape of data and label!\ndata shape: %s, label shape: %s' % (str(x.shape), str(y.shape))
-
-        # rotation
-        if self.rotation_range:
-            theta = np.pi / 180 * np.random.uniform(-self.rotation_range, self.rotation_range)
-        else:
-            theta = 0
-        rotation_matrix = np.array([[np.cos(theta), -np.sin(theta), 0],
-                                    [np.sin(theta), np.cos(theta), 0],
-                                    [0, 0, 1]])
-        if self.height_shift_range:
-            tx = np.random.uniform(-self.height_shift_range, self.height_shift_range) * crop_size[0]
-        else:
-            tx = 0
-
-        if self.width_shift_range:
-            ty = np.random.uniform(-self.width_shift_range, self.width_shift_range) * crop_size[1]
-        else:
-            ty = 0
-
-        translation_matrix = np.array([[1, 0, tx],
-                                       [0, 1, ty],
-                                       [0, 0, 1]])
-        if self.shear_range:
-            shear = np.random.uniform(-self.shear_range, self.shear_range)
-        else:
-            shear = 0
-        shear_matrix = np.array([[1, -np.sin(shear), 0],
-                                 [0, np.cos(shear), 0],
-                                 [0, 0, 1]])
-
-        if self.zoom_range[0] == 1 and self.zoom_range[1] == 1:
-            zx, zy = 1, 1
-        else:
-            zx, zy = np.random.uniform(self.zoom_range[0], self.zoom_range[1], 2)
-        if self.zoom_maintain_shape:
-            zy = zx
-        zoom_matrix = np.array([[zx, 0, 0],
-                                  [0, zy, 0],
-                                  [0, 0, 1]])
-                              
-        transform_matrix = np.dot(np.dot(np.dot(rotation_matrix, translation_matrix), shear_matrix), zoom_matrix)
-
-        h, w = x.shape[img_row_index], x.shape[img_col_index]
-        transform_matrix = transform_matrix_offset_center(transform_matrix, h, w)
-
-        x = apply_transform(x, transform_matrix, img_channel_index, fill_mode=self.fill_mode, cval=self.cval)
-        y = apply_transform(y, transform_matrix, img_channel_index, fill_mode='constant', cval=self.label_cval)
-                      
-        if self.channel_shift_range != 0:
-            x = random_channel_shift(x, self.channel_shift_range, img_channel_index)
-        if self.horizontal_flip:
-            if np.random.random() < 0.5:
-                x = flip_axis(x, img_col_index)
-                y = flip_axis(y, img_col_index)
-                      
-        if self.vertical_flip:
-            if np.random.random() < 0.5:
-                x = flip_axis(x, img_row_index)
-                y = flip_axis(y, img_row_index)
-                                                      
         if self.crop_mode == 'center':
             x, y = pair_center_crop(x, y, self.crop_size, self.data_format)
         elif self.crop_mode == 'random':
             x, y = pair_random_crop(x, y, self.crop_size, self.data_format)
+
+#        print ("** illegal pixel:{}".format(np.sum(y > 21) - np.sum(y == 255)))
 
         return x, y
 
@@ -352,6 +365,7 @@ class VocImageIterator(Iterator):
                 if self.crop_mode != 'none':
                     x = img_to_array(img, data_format=self.data_format)
                     y = img_to_array(label, data_format=self.data_format).astype(int)
+ 
                     img_w, img_h = img.size
                     if self.pad_size:
                         pad_w = max(self.pad_size[1] - img_w, 0)
@@ -384,8 +398,10 @@ class VocImageIterator(Iterator):
             x, y = self.image_data_generator.random_transform(x, y)
             x = self.image_data_generator.standardize(x)
             
+#            print ("illegal pixel:{}".format(np.sum(y > 21) - np.sum(y == 255)))
+
             if self.ignore_label:
-                y[np.where(y > self.classes)] = self.classes
+                y[np.where(y == 255)] = self.classes
     
             if self.loss_shape is not None:
                 y = np.reshape(y, self.loss_shape)
@@ -403,6 +419,11 @@ class VocImageIterator(Iterator):
 
         return batch_x, batch_y
                
+#    def next(self):
+#        with self.lock:
+#            index_array = next(self.image_data_generator)
+#        return _get_batches_of_transformed_samples(index_array)
+
 def image_generator(file_paths, size=None, normalization=True):
     """ generate train data and val
     Parameters
