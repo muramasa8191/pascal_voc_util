@@ -19,7 +19,11 @@ def crossentropy_without_ambiguous(y_true, y_pred):
 
     y_pred = K.reshape(y_pred, (-1, K.int_shape(y_pred)[-1]))
     log_softmax = tf.nn.log_softmax(y_pred)
-    
+
+    class_weight = [0.4, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 
+                5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 0.0]
+    log_softmax = log_softmax * np.array(class_weight)
+
     y_true = K.one_hot(tf.to_int32(K.flatten(K.argmax(y_true))), K.int_shape(y_pred)[-1]+1)
     unpacked = tf.unstack(y_true, axis=-1)
     y_true = tf.stack(unpacked[:-1], axis=-1)
