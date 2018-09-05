@@ -20,11 +20,13 @@ def crossentropy_without_ambiguous(y_true, y_pred):
     y_pred = K.reshape(y_pred, (-1, K.int_shape(y_pred)[-1]))
     log_softmax = tf.nn.log_softmax(y_pred)
 
-    class_weight = [0.4, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 
-                5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 0.0]
-    log_softmax = log_softmax * np.array(class_weight)
+#    class_weight = [0.2, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 
+#                    5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
+#    log_softmax = log_softmax * np.array(class_weight)
+    
 
-    y_true = K.one_hot(tf.to_int32(K.flatten(K.argmax(y_true))), K.int_shape(y_pred)[-1]+1)
+#    y_true = K.one_hot(tf.to_int32(K.flatten(K.argmax(y_true))), K.int_shape(y_pred)[-1]+1)
+    y_true = K.one_hot(tf.to_int32(K.flatten(y_true)), K.int_shape(y_pred)[-1]+1)
     unpacked = tf.unstack(y_true, axis=-1)
     y_true = tf.stack(unpacked[:-1], axis=-1)
     
@@ -35,13 +37,28 @@ def crossentropy_without_ambiguous(y_true, y_pred):
 
 def categorical_accuracy_without_ambiguous(y_true, y_pred):
 
-    legal_labels = tf.not_equal(K.argmax(y_true, axis=-1), CLASSES)
+#    legal_labels = tf.not_equal(K.argmax(y_true, axis=-1), CLASSES)
+    nb_classes = K.int_shape(y_pred)[-1]
+    y_pred = K.reshape(y_pred, (-1, nb_classes))
+    
+    y_true = K.one_hot(tf.to_int32(K.flatten(y_true)), nb_classes + 1)
+    unpacked = tf.unstack(y_true, axis=-1)
+    legal_labels = ~tf.cast(unpacked[-1], tf.bool)
+    y_true = tf.stack(unpacked[:-1], axis=-1)
 
     return K.sum(tf.to_float(legal_labels & K.equal(K.argmax(y_true, axis=-1), K.argmax(y_pred, axis=-1)))) / K.sum(tf.to_float(legal_labels))
 
+
 def categorical_accuracy_only_valid_classes(y_true, y_pred):
     
-    legal_labels = tf.not_equal(K.argmax(y_true, axis=-1), CLASSES)
+#    legal_labels = tf.not_equal(K.argmax(y_true, axis=-1), CLASSES)
+    nb_classes = K.int_shape(y_pred)[-1]
+    y_pred = K.reshape(y_pred, (-1, nb_classes))
+    
+    y_true = K.one_hot(tf.to_int32(K.flatten(y_true)), nb_classes + 1)
+    unpacked = tf.unstack(y_true, axis=-1)
+    legal_labels = ~tf.cast(unpacked[-1], tf.bool)
+    y_true = tf.stack(unpacked[:-1], axis=-1)    
     forground = tf.not_equal(K.argmax(y_true, axis=-1), 0)
     
     return K.sum(tf.to_float(forground & legal_labels & K.equal(K.argmax(y_true, axis=-1), K.argmax(y_pred, axis=-1)))) / K.sum(tf.to_float(legal_labels & forground))
@@ -337,10 +354,11 @@ class VocImageIterator(Iterator):
                              '"binary", "sparse", "input"'
                              ' or None.')
         self.class_mode = class_mode
-        if class_mode == 'categorical':
-            self.label_shape = target_size + (classes+1,)
-        elif class_mode == 'binary':
-            self.label_shape = target_size + (1,)
+#        if class_mode == 'categorical':
+#            self.label_shape = target_size + (classes,)
+#        elif class_mode == 'binary':
+#            self.label_shape = target_size + (1,)
+        self.label_shape = target_size + (1,)
         self.class_mode = class_mode
         
         self.train_filenames, self.label_filenames = get_train_files(directory)
@@ -405,13 +423,15 @@ class VocImageIterator(Iterator):
 #            print ("illegal pixel:{}".format(np.sum(y > 21) - np.sum(y == 255)))
 
             if self.ignore_label:
-                y[np.where(y == 255)] = self.classes
+                y[np.where(y == self.ignore_label)] = self.classes
     
+#            print ("y.shape:{}".format(y.shape))
             if self.loss_shape is not None:
                 y = np.reshape(y, self.loss_shape)
-            max_val = np.max(y)
+#            max_val = np.max(y)
+#            print ("* y.shape:{}".format(y.shape))
 
-            y = to_categorical(y, self.classes + 1)
+#            y = to_categorical(y, self.classes + 1)
 
             batch_x[i] = x
             batch_y[i] = y
@@ -421,6 +441,7 @@ class VocImageIterator(Iterator):
         if self.class_mode == 'binary':
             return batch_x
 
+#        print ("batch_y.shape:{}".format(batch_y.shape))
         return batch_x, batch_y
                
 #    def next(self):
